@@ -1,11 +1,12 @@
 "use strict";
 
-var inherits = require('inherits');
+var inherits = require('util').inherits;
 var EventEmitter = require('events').EventEmitter;
 
 module.exports = WebObject;
 
 WebObject.draggingObject = null;
+WebObject.count = 0;
 
 function WebObject (opts, parent) {
 	if (this instanceof WebObject === false) {
@@ -20,21 +21,27 @@ function WebObject (opts, parent) {
 	
 	self._isWebObject = true;
 	self.settings = opts;
-	self.className = opts.className || 'web-object';
-	self.type = opts.type || 'WebObject';
-	self.parent = parent;
+	self.className = opts.className || self.className|| 'web-object';
+	self.type = opts.type || self.type || 'WebObject';
+	self.parent = parent || self.parent;
+	self.id = opts.id || self.id || (self.type + '-' + WebObject.count++);
+	self.root = self.root || document.createElement('div');
+	self.root.className = self.className;
 	
-	self.root = document.createElement('div');
-	self.root.className = opts.className;
-	
+	self.parts = self.parts || opts.parts || ['header', 'body', 'footer'];
 	self.objects = [];
+	self.index = {};
 	
-	['header', 'body', 'footer'].forEach(function (part) {
+	self.parts.forEach(function (part) {
+		if (self.hasOwnProperty(part)) {
+			throw new Error('Can not use part name "' + part + '". Its use would collide with an existing object property.');
+		}
+		
 		self[part] = document.createElement('div');
 		self[part].className = opts.className + '-' + part;
 		self.root.appendChild(self[part]);
 		
-		appendChild(self, self[part], self.root);
+		appendChild(self, opts[part], self[part]);
 	});
 	
 	if (opts.draggable) {
@@ -122,7 +129,7 @@ function appendChild(sourceObject, source, target) {
 	else if (typeof source === 'function') {
 		target.appendChild(source(sourceObject));
 	}
-	else {
+	else if (source) {
 		target.appendChild(source);
 	}
 }
@@ -130,7 +137,10 @@ function appendChild(sourceObject, source, target) {
 WebObject.prototype.add = function (opts) {
 	var self = this;
 	
-	var object = WebObject(opts, self);
+	var object = (opts._isWebObject)
+		? opts
+		: WebObject(opts, self)
+		;
 	
 	self.addObject(object);
 	
@@ -139,6 +149,8 @@ WebObject.prototype.add = function (opts) {
 
 WebObject.prototype.addObject = function (object, index) {
 	var self = this;
+	
+	self.index[object.id] = object;
 	
 	if (index) {
 		self.objects.push(object);
@@ -157,6 +169,8 @@ WebObject.prototype.addObject = function (object, index) {
 WebObject.prototype.removeObject = function (object) {
 	var self = this;
 	
+	delete self.index[object.id];
+	
 	self.objects.splice(self.objects.indexOf(object), 1);
 	self.body.removeChild(object.root);
 	self.emit('removed', object);
@@ -170,8 +184,8 @@ WebObject.prototype.move = function (dest) {
 	var src = self.parent;
 	
 	self.parent.removeObject(self);
-	self.parent = destinationObject;
-	destinationObject.addObject(self);
+	self.parent = dest;
+	dest.addObject(self);
 	
 	self.emit('move', dest, src);
 	
@@ -186,7 +200,7 @@ WebObject.prototype.position = function (index) {
 	return self;
 }
 
-Column.prototype.positionObject = function (object, index) {
+WebObject.prototype.positionObject = function (object, index) {
 	var self = this;
 	
 	self.objects.splice(self.objects.indexOf(object), 1);
@@ -265,4 +279,54 @@ WebObject.prototype.visible = function () {
 	var self = this;
 	
 	return self.root.style.display !== 'none';
+}
+
+WebObject.prototype.each = function (fn, deep) {
+	var self = this;
+	
+	if (deep) {
+		self.objects.forEach(function (obj) {
+			fn(obj);
+			
+			obj.each(fn);
+		});
+	}
+	else {
+		self.objects.forEach(fn);
+	}
+	
+	return self;
+}
+
+WebObject.prototype.filter = function (fn) {
+	var self = this;
+	
+	var matches = self.objects.filter(function (object) {
+		var result = fn(object, self);
+		
+		if (result) {
+			object.show();
+		}
+		else {
+			object.hide();
+		}
+		
+		return result;
+	});
+	
+	self.emit('filter', matches);
+	
+	return matches;
+}
+
+WebObject.prototype.sort = function (fn) {
+	var self = this;
+	
+	self.objects.sort(fn);
+	
+	self.objects.forEach(function (object, i) {
+		self.positionObject(object, i);
+	});
+	
+	return self;
 }

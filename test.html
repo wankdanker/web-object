@@ -52,7 +52,7 @@ body, html {
 }
 
 </style>
-<script src="dist/webcolumns.js"></script>
+<script src="dist/web-object.js"></script>
 </head>
 <body>
 
@@ -79,146 +79,46 @@ if (el.classList) {
 }
 }
 
-var c = WebColumns({ dragdrop : true, container : document.getElementById('the-container')});
+var columns = WebObject({ className : 'columns', type : 'Columns' });
 
-var config = {
-	"Title 1" : {}
-	, "Title 2" : {}
-	, "Title 3" : {}
-	, "Title 4" : {}
-	, "Title 5" : {}
-	, "Title 6" : {}
-	, "Title 7" : {}
-	, "Title 8" : {}
-}
+document.getElementById('the-container').appendChild(columns.root);
 
-var nodes = [];
+columns.add({ className : 'column', droppable : true, header : 'header', body : 'body', footer : 'footer', type : 'Column' });
+columns.add({ className : 'column', droppable : true, header : 'header', body : 'body', footer : 'footer', type : 'Column' });
+columns.add({ className : 'column', droppable : true, header : 'header', body : 'body', footer : 'footer', type : 'Column' });
+columns.add({ className : 'column', droppable : true, header : 'header', body : 'body', footer : 'footer', type : 'Column' });
+columns.add({ className : 'column', droppable : true, header : 'header', body : 'body', footer : 'footer', type : 'Column' });
+columns.add({ className : 'column', droppable : true, header : 'header', body : 'body', footer : 'footer', type : 'Column' });
 
-Object.keys(config).forEach(function (title) {
-	var obj = config[title];
-	
-	obj.column = c.add(Col({ title : title }));
-	
-	nodes.push(obj.column.add(Card({ title : "Card " + nodes.length, body : "Body " + nodes.length })));
-	nodes.push(obj.column.add(Card({ title : "Card " + nodes.length, body : "Body " + nodes.length })));
-	nodes.push(obj.column.add(Card({ title : "Card " + nodes.length, body : "Body " + nodes.length })));
-	nodes.push(obj.column.add(Card({ title : "Card " + nodes.length, body : "Body " + nodes.length })));
-	nodes.push(obj.column.add(Card({ title : "Card " + nodes.length, body : "Body " + nodes.length })));
+columns.objects[0].add({ className : 'column-node', draggable : true, header : 'header', body : 'body', footer : 'footer', type : 'ColumnNode' });
+columns.objects[0].add({ className : 'column-node', draggable : true, header : 'header', body : 'body', footer : 'footer', type : 'ColumnNode' });
+columns.objects[0].add({ className : 'column-node', draggable : true, header : 'header', body : 'body', footer : 'footer', type : 'ColumnNode' });
+columns.objects[0].add({ className : 'column-node', draggable : true, header : 'header', body : 'body', footer : 'footer', type : 'ColumnNode' });
+columns.objects[0].add({ className : 'column-node', draggable : true, header : 'header', body : 'body', footer : 'footer', type : 'ColumnNode' });
+columns.objects[0].add({ className : 'column-node', draggable : true, header : 'header', body : 'body', footer : 'footer', type : 'ColumnNode' });
+
+columns.each(function (col) {
+	col.on('drop', function (obj) {
+		obj.move(col);
+
+		removeClass(col.root, 'drag-over');
+	});
+
+	col.on('dragover', function (obj) {
+		addClass(col.root, 'drag-over');
+	});
+
+	col.on('dragleave', function (obj) {
+		removeClass(col.root, 'drag-over');
+	});
+
+	col.each(function (obj) {
+		obj.root.onclick = function () {
+			console.log(obj);
+		}
+	});
 });
 
-setInterval(function () {
-	var inode = Math.floor(Math.random() * (nodes.length));
-	var icolumn = Math.floor(Math.random() * (c.columns.length));
-	
-	nodes[inode].move(c.columns[icolumn]);
-}, 1000);
-
-function Col(opts) {
-	return function (column) {
-		var root = document.createElement('div');
-		
-		root.innerHTML = opts.title;
-		
-		column.on('removed', function () {
-			console.log('removed', arguments);
-		});
-		
-		column.on('added', function () {
-			console.log('added', arguments);
-		});
-		
-		column.on('dragover', function (node) {
-			console.log('dragover');
-			
-			addClass(column.root, 'drag-over');
-			
-			if (dropCheck(node)) {
-				addClass(column.root, 'allowed');
-			}
-			else {
-				addClass(column.root, 'denied');
-				addClass(node.root, 'drop-denied');
-			}
-		});
-		
-		column.on('dragleave', function (node) {
-			console.log('dragleave');
-		
-			removeClass(column.root, 'drag-over');
-			
-			if (dropCheck(node)) {
-				removeClass(column.root, 'allowed');
-			}
-			else {
-				removeClass(column.root, 'denied');
-				removeClass(node.root, 'drop-denied');
-			}
-		});
-		
-		column.on('drop', function (node) {
-			console.log('drop');
-		
-			removeClass(column.root, 'drag-over');
-			removeClass(column.root, 'allowed');
-			removeClass(column.root, 'denied');
-			
-			if(dropCheck(node)) {
-				node.move(column);
-			}
-		});
-		
-		function dropCheck (node) {
-			if (Math.abs(node.parent.index - column.index) < 2) {
-				return false;
-			}
-			
-			return true;
-		};
-		
-		return root;
-	}
-}
-
-function Card (opts) {
-	return function (node) {
-		var root = document.createElement('div');
-		var title = document.createElement('div');
-		var body = document.createElement('div');
-		var btn = document.createElement('button');
-		var btn2 = document.createElement('button');
-
-		root.appendChild(title);
-		root.appendChild(body);
-
-		title.innerHTML = opts.title;
-		body.innerHTML = opts.body + '<hr>';
-		
-
-		body.appendChild(btn);
-		btn.innerHTML = '<-';
-		btn.onclick = function (e) {
-			//console.log(node.parent);
-			node.move('index', node.parent.index - 1);
-		};
-		
-		body.appendChild(btn2);
-		btn2.innerHTML = '->';
-		btn2.onclick = function (e) {
-			//console.log(node.parent);
-			node.move('index', node.parent.index + 1);
-		};
-		
-		node.on('moved', function (dest) {
-			//console.log('moved', arguments);
-			
-			addClass(node.root, 'animated');
-			addClass(node.root, 'shake');
-			
-		});
-		
-		return root;
-	}
-}
 </script>
 </body>
 </html>

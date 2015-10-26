@@ -1,0 +1,24 @@
+.columns-body {
+	cursor : default;
+	font-family : arial;
+	
+	display : flex;
+	flex-direction : row;
+	flex-grow : 1;
+}
+
+.columns-body .column {
+	display : flex;
+	flex-direction : column;
+	flex-grow : 1;
+}
+
+.columns .column .column-title {
+}
+
+.columns .column .column-node {
+}
+
+.columns .column .column-node.draggable {
+	cursor: pointer;
+}
