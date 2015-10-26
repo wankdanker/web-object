@@ -18,13 +18,17 @@ function WebObject (opts, parent) {
 	opts = opts || {};
 	
 	var self = this;
-	
+
 	self._isWebObject = true;
 	self.settings = opts;
 	self.className = opts.className || self.className|| 'web-object';
 	self.type = opts.type || self.type || 'WebObject';
 	self.parent = parent || self.parent;
 	self.id = opts.id || self.id || (self.type + '-' + WebObject.count++);
+	self.appendTo = opts.appendTo || self.appendTo || 'body';
+	self.draggable = opts.draggable || self.draggable;
+	self.droppable = opts.droppable || self.droppable;
+
 	self.root = self.root || document.createElement('div');
 	self.root.className = self.className;
 	
@@ -38,13 +42,13 @@ function WebObject (opts, parent) {
 		}
 		
 		self[part] = document.createElement('div');
-		self[part].className = opts.className + '-' + part;
+		self[part].className = self.className + '-' + part;
 		self.root.appendChild(self[part]);
 		
 		appendChild(self, opts[part], self[part]);
 	});
 	
-	if (opts.draggable) {
+	if (self.draggable) {
 		self.root.className += ' draggable';
 		
 		self.root.draggable = true;
@@ -60,7 +64,7 @@ function WebObject (opts, parent) {
 		WebObject.draggingObject = null;
 	}
 	
-	if (opts.droppable) {
+	if (self.droppable) {
 		self.root.ondragover = dragover;
 		self.root.ondragenter = dragenter;
 		self.root.ondragleave = dragleave;
@@ -149,16 +153,16 @@ WebObject.prototype.add = function (opts) {
 
 WebObject.prototype.addObject = function (object, index) {
 	var self = this;
-	
+
 	self.index[object.id] = object;
 	
-	if (index) {
+	if (!index) {
 		self.objects.push(object);
-		self.body.appendChild(object.root);
+		self[self.appendTo].appendChild(object.root);
 	}
 	else {
 		self.objects.splice(index, 0, object);
-		self.body.insertBefore(object.root, self.body.children[index]);
+		self[self.appendTo].insertBefore(object.root, self[self.appendTo].children[index]);
 	}
 	
 	self.emit('added', object);
@@ -172,7 +176,7 @@ WebObject.prototype.removeObject = function (object) {
 	delete self.index[object.id];
 	
 	self.objects.splice(self.objects.indexOf(object), 1);
-	self.body.removeChild(object.root);
+	self[self.appendTo].removeChild(object.root);
 	self.emit('removed', object);
 	
 	return self;
@@ -205,8 +209,8 @@ WebObject.prototype.positionObject = function (object, index) {
 	
 	self.objects.splice(self.objects.indexOf(object), 1);
 	self.objects.splice(index, 0, object);
-	self.body.removeChild(object.root);
-	self.body.insertBefore(object.root, self.body.children[index]);
+	self[self.appendTo].removeChild(object.root);
+	self[self.appendTo].insertBefore(object.root, self[self.appendTo].children[index]);
 	
 	return self;
 };
@@ -335,6 +339,18 @@ WebObject.prototype.getObjectById = function (id) {
 	var self = this;
 
 	return self.index[id];
+}
+
+WebObject.prototype.getIndex = function () {
+	var self = this;
+
+	return self.parent.getIndexOf(self);
+}
+
+WebObject.prototype.getIndexOf = function (object) {
+	var self = this;
+
+	return self.objects.indexOf(object);
 }
 
 WebObject.prototype.getObjectByIndex = function (index) {
