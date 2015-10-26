@@ -1,0 +1,23 @@
+{
+  "name": "web-object",
+  "version": "1.0.0",
+  "description": "Generic object collections wrapping drag/drop, sorting, filtering, toggle, show, hide functions.",
+  "main": "web-object.js",
+  "dependencies": {
+    "inherits": "^2.0.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Dan VerWeire",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wankdanker/web-object.git"
+  },
+  "bugs": {
+    "url": "https://github.com/wankdanker/web-object/issues"
+  },
+  "homepage": "https://github.com/wankdanker/web-object#readme"
+}
