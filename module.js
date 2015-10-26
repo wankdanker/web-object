@@ -1,0 +1,1 @@
+WebObject = require('./web-object');
