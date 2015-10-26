@@ -330,3 +330,16 @@ WebObject.prototype.sort = function (fn) {
 	
 	return self;
 }
+
+WebObject.prototype.getObjectById = function (id) {
+	var self = this;
+
+	return self.index[id];
+}
+
+WebObject.prototype.getObjectByIndex = function (index) {
+	var self = this;
+
+	return self.objects[index];
+}
+
